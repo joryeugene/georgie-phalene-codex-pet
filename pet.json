@@ -1,7 +1,7 @@
 {
   "id": "georgie-phalene",
   "displayName": "Georgie",
-  "description": "Georgie is a chatty Phalène focus buddy for Codex. He is observant, comforting, and ready to help you settle in and keep going.",
+  "description": "Georgie is a silent Phalène focus buddy for Codex. He stays close while you work and offers a small paw when you need a pause.",
   "spriteVersionNumber": 2,
   "spritesheetPath": "spritesheet.webp"
 }

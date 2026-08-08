@@ -1,15 +1,15 @@
 # Georgie, the Phalène Codex Pet
 
-![Georgie checking in](media/georgie-check-in.png)
+![Georgie offers a paw](media/georgie-check-in.png)
 
-Georgie is a chatty focus buddy for Codex. He is a Phalène, the drop-eared Papillon variety. He keeps you company while you work and gives a small check-in when you need it.
+Georgie is a silent focus buddy for Codex. He is a Phalène, the drop-eared Papillon variety. He stays close while you work and offers a small paw when you need a pause.
 
 This pet is for people who work better with a little comfort, support, and momentum nearby. Georgie is neurodivergent-friendly.
 
 ## What Georgie does
 
 - Keeps a calm presence during focused work.
-- Checks in with a small paw lift instead of a loud reaction.
+- Offers a small paw lift instead of a loud reaction.
 - Brings a little company to long or difficult tasks.
 
 ## Install
