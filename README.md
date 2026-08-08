@@ -4,7 +4,7 @@
 
 Georgie is a chatty focus buddy for Codex. He is a Phalène, the drop-eared Papillon variety. He keeps you company while you work and gives a small check-in when you need it.
 
-This pet is for people who work better with a little comfort, support, and momentum nearby. Georgie is neurodivergent-friendly. He does not make medical claims or replace professional support.
+This pet is for people who work better with a little comfort, support, and momentum nearby. Georgie is neurodivergent-friendly.
 
 ## What Georgie does
 
@@ -15,9 +15,11 @@ This pet is for people who work better with a little comfort, support, and momen
 ## Install
 
 1. Clone or download this repository.
-2. Copy the georgie-phalene-codex-pet folder to your Codex pets folder:
+2. Copy the georgie-phalene-codex-pet folder to your Codex pets folder.
 
-       C:\Users\your-name\.codex\pets\
+   - Windows: C:\Users\your-name\.codex\pets\
+   - macOS: ~/.codex/pets/
+   - Linux: ~/.codex/pets/
 
 3. Restart Codex and select Georgie from your pet picker.
 
