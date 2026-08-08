@@ -1,0 +1,7 @@
+.DS_Store
+Thumbs.db
+work/
+qa/
+generated_images/
+references/
+package-validation.json
