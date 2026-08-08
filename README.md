@@ -27,6 +27,12 @@ This pet is for people who work better with a little comfort, support, and momen
 
 Phalènes are the drop-eared variety of the Continental Toy Spaniel. The exact origin is uncertain. Related toy spaniels appear in European portraits from the 16th century. France and Belgium both shaped the breed's development. The erect-eared variety is called Papillon. [The Papillon Club of America has the fuller history.](https://papillonclub.org/articles-a-brief-history-of-the-papillon/)
 
+### A 1542 portrait
+
+![Titian's Portrait of Clarissa Strozzi](media/titian-clarissa-strozzi-1542.jpg)
+
+Titian's *Portrait of Clarissa Strozzi* shows a small drop-eared spaniel. [The Papillon Club of America lists it among the artistic predecessors of the modern Papillon.](https://papillonclub.org/papillons-in-art/) The work is public domain. [Image source and record](https://commons.wikimedia.org/wiki/File:Titian_-_Portrait_of_Clarissa_Strozzi_-_WGA22926.jpg).
+
 ## License
 
 MIT. See [LICENSE](LICENSE).
