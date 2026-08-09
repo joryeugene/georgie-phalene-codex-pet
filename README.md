@@ -23,6 +23,12 @@ This pet is for people who work better with a little comfort, support, and momen
 
 3. Restart Codex and select Georgie from your pet picker.
 
+## Animation work
+
+Read [AGENTS.md](AGENTS.md) and [the Georgie animation skill](skills/georgie-animation/SKILL.md) before you change the sprite sheet. The state matrix defines every action, frame sequence, scale, baseline, and release check.
+
+Run `just check` before you install or publish a new sprite sheet. Do not repair individual atlas cells.
+
 ## About Phalènes
 
 Phalènes are the drop-eared variety of the Continental Toy Spaniel. The exact origin is uncertain. Related toy spaniels appear in European portraits from the 16th century. France and Belgium both shaped the breed's development. The erect-eared variety is called Papillon. [The Papillon Club of America has the fuller history.](https://papillonclub.org/articles-a-brief-history-of-the-papillon/)

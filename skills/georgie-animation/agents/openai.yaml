@@ -1,0 +1,4 @@
+interface:
+  display_name: "Georgie Animation"
+  short_description: "Build seamless Codex pet animations"
+  default_prompt: "Use $georgie-animation to rebuild Georgie as a seamless Codex v2 pet."

@@ -4,4 +4,9 @@ work/
 qa/
 generated_images/
 references/
+!skills/georgie-animation/references/
+!skills/georgie-animation/references/**
+__pycache__/
+*.py[cod]
 package-validation.json
+motion-validation.json
