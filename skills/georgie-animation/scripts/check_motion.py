@@ -7,7 +7,7 @@ import argparse
 import json
 from pathlib import Path
 
-from PIL import Image
+from PIL import Image, ImageFilter
 
 
 CELL_W = 192
@@ -40,6 +40,9 @@ SUBTLE_LIMITS = {
 }
 
 GROUNDED_STATES = {"idle", "waving", "waiting", "running", "review", "look-a", "look-b"}
+RUNNING_CORE_BOX = (30, 50, 110, 204)
+RUNNING_CORE_PIXEL_CHANGE_LIMIT = 0.06
+RUNNING_CORE_ALPHA_CHANGE_LIMIT = 0.02
 
 
 def alpha_bbox(frame: Image.Image) -> tuple[int, int, int, int] | None:
@@ -99,6 +102,36 @@ def silhouette_iou(first: Image.Image, last: Image.Image) -> float:
     return intersection / union if union else 1.0
 
 
+def core_change_ratios(frames: list[Image.Image]) -> tuple[float, float]:
+    cropped = [frame.crop(RUNNING_CORE_BOX) for frame in frames]
+    blurred = [frame.filter(ImageFilter.GaussianBlur(1.5)) for frame in cropped]
+    silhouettes = [
+        frame.getchannel("A")
+        .point(lambda value: 255 if value > 16 else 0)
+        .filter(ImageFilter.MaxFilter(3))
+        .filter(ImageFilter.MinFilter(3))
+        for frame in cropped
+    ]
+    pixel_ratios: list[float] = []
+    alpha_ratios: list[float] = []
+    for index, current in enumerate(blurred):
+        following = blurred[(index + 1) % len(blurred)]
+        visible = pixel_changes = 0
+        for left, right in zip(current.get_flattened_data(), following.get_flattened_data()):
+            if left[3] <= 16 and right[3] <= 16:
+                continue
+            visible += 1
+            pixel_changes += max(abs(left[channel] - right[channel]) for channel in range(4)) > 24
+        pixel_ratios.append(pixel_changes / visible if visible else 0.0)
+
+        alpha = silhouettes[index].tobytes()
+        following_alpha = silhouettes[(index + 1) % len(silhouettes)].tobytes()
+        intersection = sum(1 for left, right in zip(alpha, following_alpha) if left and right)
+        union = sum(1 for left, right in zip(alpha, following_alpha) if left or right)
+        alpha_ratios.append(1 - intersection / union if union else 0.0)
+    return max(pixel_ratios), max(alpha_ratios)
+
+
 def inspect(path: Path) -> dict[str, object]:
     atlas = Image.open(path).convert("RGBA")
     errors: list[str] = []
@@ -133,6 +166,20 @@ def inspect(path: Path) -> dict[str, object]:
             "alpha_center_range": round(max(c for c in alpha_centers if c is not None) - min(c for c in alpha_centers if c is not None), 3),
             "loop_iou": round(iou, 4),
         }
+        if state == "running":
+            core_pixel_change, core_alpha_change = core_change_ratios(frames)
+            row_result["core_pixel_change_ratio"] = round(core_pixel_change, 4)
+            row_result["core_alpha_change_ratio"] = round(core_alpha_change, 4)
+            if core_pixel_change > RUNNING_CORE_PIXEL_CHANGE_LIMIT:
+                errors.append(
+                    f"running: fixed body pixels change {core_pixel_change:.1%}; "
+                    f"limit is {RUNNING_CORE_PIXEL_CHANGE_LIMIT:.1%}"
+                )
+            if core_alpha_change > RUNNING_CORE_ALPHA_CHANGE_LIMIT:
+                errors.append(
+                    f"running: fixed body silhouette changes {core_alpha_change:.1%}; "
+                    f"limit is {RUNNING_CORE_ALPHA_CHANGE_LIMIT:.1%}"
+                )
         rows.append(row_result)
         if state in SUBTLE_LIMITS:
             height_limit, baseline_limit, anchor_limit, head_limit, silhouette_limit, iou_limit = SUBTLE_LIMITS[state]
@@ -140,11 +187,11 @@ def inspect(path: Path) -> dict[str, object]:
                 errors.append(f"{state}: height drifts {row_result['height_range']} px; limit is {height_limit}")
             if row_result["baseline_range"] > baseline_limit:
                 errors.append(f"{state}: baseline drifts {row_result['baseline_range']} px; limit is {baseline_limit}")
-            if row_result["anchor_center_range"] > anchor_limit:
+            if state != "running" and row_result["anchor_center_range"] > anchor_limit:
                 errors.append(f"{state}: lower-body anchor drifts {row_result['anchor_center_range']} px; limit is {anchor_limit}")
-            if row_result["head_center_range"] > head_limit:
+            if state != "running" and row_result["head_center_range"] > head_limit:
                 errors.append(f"{state}: head center drifts {row_result['head_center_range']} px; limit is {head_limit}")
-            if row_result["alpha_center_range"] > silhouette_limit:
+            if state != "running" and row_result["alpha_center_range"] > silhouette_limit:
                 errors.append(f"{state}: full silhouette drifts {row_result['alpha_center_range']} px; limit is {silhouette_limit}")
             if iou < iou_limit:
                 errors.append(f"{state}: first-to-last silhouette IoU is {iou:.4f}; minimum is {iou_limit}")

@@ -23,7 +23,7 @@ Build Georgie from coherent source rows. Never repair the packaged atlas one cel
 ## Workflow
 
 1. Write or update the complete state sequence in `references/animation-matrix.md`.
-2. Generate the smallest failing unit, normally one complete row, from the canonical identity reference and the row layout guide.
+2. Generate the smallest failing unit, normally one complete row, from the canonical identity reference and the row layout guide. For a stationary articulated appendage loop, an image-generated body-and-key component kit may be used with `scripts/build_tail_wag.py`.
 3. Run `scripts/extract_row.py` on the complete strip. It accepts equal slots or certified empty gaps, applies one row scale, and registers complete poses to one body anchor.
 4. Run `scripts/render_row.py` and inspect the complete loop at app size before assembly.
 5. Reject the complete row for drift, scale pop, baseline jump, identity change, broken loop closure, or incorrect state meaning.
@@ -31,12 +31,20 @@ Build Georgie from coherent source rows. Never repair the packaged atlas one cel
 7. Run `scripts/check_motion.py`, the `hatch-pet` atlas validator, chroma cleanup, and final visual QA.
 8. Install and publish only after every gate passes.
 
+Rebuild the deterministic running frames with:
+
+```powershell
+just rig-running <output-directory>
+```
+
+The command uses `assets/georgie-tail-rig.png`, which contains the approved image-generated body and four tail keys.
+
 ## Hard rules
 
 - Do not shift, crop, rotate, scale, splice, inpaint, or copy individual packaged cells to hide a bad transition.
 - Do not scale frames separately. Deterministic full-pose registration to the shared body anchor is allowed during source extraction.
 - Reject the full strip when a pose crosses its equal slot and no empty gap of at least six pixels separates the complete poses.
-- Do not replace one body region, such as a tail, head, eyes, or paw, inside final cells.
+- Do not replace body regions inside final cells to hide a failed generated row. A declared appendage rig is allowed only when every visual component comes from one coherent image-generated kit, the appendage is composited behind one unchanged whole body, and the completed loop passes deterministic and visual QA.
 - Do not reuse another state's row as a substitute.
 - An exact neutral whole-pose frame may anchor state boundaries when the matrix requires a pixel-stable entry or exit.
 - Do not publish a row that has not been watched as a complete loop at app size.

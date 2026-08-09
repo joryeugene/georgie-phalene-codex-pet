@@ -15,5 +15,8 @@ install: check
 status:
   $root = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $env:USERPROFILE '.codex' }; $installed = Join-Path $root 'pets\{{pet_id}}\{{asset}}'; Get-FileHash -Algorithm SHA256 -LiteralPath {{asset}},$installed; git status --short
 
+rig-running output_dir:
+  python skills/georgie-animation/scripts/build_tail_wag.py skills/georgie-animation/assets/georgie-tail-rig.png {{output_dir}}
+
 publish message:
   just check; git add -- {{asset}} README.md media/georgie-check-in.png pet.json Justfile .gitignore AGENTS.md skills; git commit -m {{message}}; git push
