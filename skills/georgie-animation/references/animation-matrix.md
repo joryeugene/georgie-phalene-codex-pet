@@ -6,7 +6,8 @@ This file is the source of truth for Georgie's Codex v2 motion.
 
 - Cell: `192x208` pixels.
 - Atlas: 8 columns by 11 rows, `1536x2288` pixels.
-- Master body height: 145 pixels at the neutral pose. Use the same row-level scale for every frame.
+- Master standing body height: 145 pixels at the neutral pose. Use the same row-level scale for every frame.
+- Directional drag gait height: 130 pixels. The side profile has more visual mass than the standing pose, so both gait rows use this shared smaller scale.
 - Grounded baseline: `y=203`, with at most 1 pixel of drift in frequent rows. Airborne frames move above it without changing body scale.
 - Subtle-row height range: at most 3 pixels within a row.
 - Lower-torso horizontal drift: at most 1 pixel in `running` and 0.5 pixel in `review`.
@@ -19,8 +20,8 @@ This file is the source of truth for Georgie's Codex v2 motion.
 | Row | State | Frames | Trigger meaning | Sequence | Loop requirement |
 | ---: | --- | ---: | --- | --- | --- |
 | 0 | `idle` | 6 | Codex is resting | neutral, soft inhale, soft exhale, full blink, eyes open, neutral | Quiet breathing. No head turn. Last frame visually matches first. |
-| 1 | `running-right` | 8 | User drags Georgie right | contact, down, passing, up, contact, down, passing, up | True right-facing gait with a stable body scale and an even cyclic cadence. |
-| 2 | `running-left` | 8 | User drags Georgie left | contact, down, passing, up, contact, down, passing, up | True left-facing gait. Mirror row 1 only if markings remain correct. |
+| 1 | `running-right` | 8 | User drags Georgie right | contact, down, passing, up, contact, down, passing, up | True right-facing gait at the shared 130 px directional scale, with an even cyclic cadence. |
+| 2 | `running-left` | 8 | User drags Georgie left | contact, down, passing, up, contact, down, passing, up | True left-facing gait at the same 130 px scale. Mirror row 1 only if markings remain correct. |
 | 3 | `waving` | 4 | Brief greeting or attention | tail at rest, small tail sweep, return through midpoint, tail at rest | One restrained tail greeting. Feet, torso, and head stay anchored. No paw lift. |
 | 4 | `jumping` | 5 | Playful direct interaction | exact neutral, crouch, lift, peak, exact neutral | One compact hop. The first and last cells reuse the approved neutral whole pose, so the loop cannot pop at its boundary. |
 | 5 | `failed` | 8 | A task failed or stopped | exact neutral, ears soften, sit, eyes lower, recover, rise, standing bridge, exact neutral | Gentle disappointment, not distress. The standing bridge removes the seated-to-neutral pop. |
