@@ -1,15 +1,17 @@
 # Georgie, the Phalène Codex Pet
 
-![Georgie offers a paw](media/georgie-check-in.png)
+![Georgie beside a Codex task](media/georgie-check-in.png)
 
-Georgie is a silent focus buddy for Codex. He is a Phalène, the drop-eared variety of the Continental Toy Spaniel. The erect-eared variety is called Papillon. He stays close while you work and offers a small paw when you need a pause.
+Georgie is a silent focus buddy for Codex. He is a Phalène, the drop-eared variety of the Continental Toy Spaniel. The erect-eared variety is called Papillon. He stays close while you work and keeps reactions quiet.
+
+Georgie is part of the Codex Desktop workflow described in [I Wanted to Own the Harness. Then Codex Desktop Won.](https://jorypestorious.com/blog/portable-agent-factory/)
 
 This pet is for people who work better with a little comfort, support, and momentum nearby. Georgie is neurodivergent-friendly.
 
 ## What Georgie does
 
 - Keeps a calm presence during focused work.
-- Offers a small paw lift instead of a loud reaction.
+- Uses quiet reactions instead of noisy interruptions.
 - Brings a little company to long or difficult tasks.
 
 ## Install
@@ -25,9 +27,7 @@ This pet is for people who work better with a little comfort, support, and momen
 
 ## Animation work
 
-Read [AGENTS.md](AGENTS.md) and [the Georgie animation skill](skills/georgie-animation/SKILL.md) before you change the sprite sheet. The state matrix defines every action, frame sequence, scale, baseline, and release check.
-
-Run `just check` before you install or publish a new sprite sheet. Do not repair individual atlas cells.
+Read [AGENTS.md](AGENTS.md) and [the Georgie animation skill](skills/georgie-animation/SKILL.md) before you change the sprite sheet. Treat v1.0.0 as the known-good release. Test animation changes as separate candidates and review each real Codex action before installation or publication. Do not repair individual atlas cells.
 
 ## About Phalènes
 
