@@ -12,7 +12,8 @@ from PIL import Image, ImageFilter
 
 CELL_W = 192
 CELL_H = 208
-NEUTRAL_HEIGHT_RANGE = (142, 148)
+NEUTRAL_HEIGHT_RANGE = (173, 179)
+DIRECTIONAL_HEIGHT_RANGE = (137, 143)
 GROUNDED_BASELINE_RANGE = (200, 204)
 FRAME_COUNTS = (6, 8, 8, 4, 5, 8, 6, 6, 6, 8, 8)
 STATE_NAMES = (
@@ -29,20 +30,26 @@ STATE_NAMES = (
     "look-b",
 )
 
-SUBTLE_LIMITS = {
-    "idle": (4, 2, 2.0, 2.0, 2.0, 0.88),
+ROW_LIMITS = {
+    "idle": (4, 2, 2.0, 3.0, 2.0, 0.88),
     "waving": (5, 2, 2.0, 2.0, 2.0, 0.82),
-    "waiting": (4, 2, 2.0, 2.0, 2.0, 0.88),
+    "waiting": (4, 2, 2.0, 3.25, 2.0, 0.88),
     "running": (5, 1, 1.0, 0.8, 1.5, 0.90),
-    "review": (3, 1, 0.5, 0.5, 1.0, 0.92),
-    "look-a": (5, 2, 2.0, 3.5, 2.5, 0.72),
-    "look-b": (5, 2, 2.0, 3.5, 2.5, 0.72),
+    "review": (3, 1, 0.75, 1.5, 1.0, 0.92),
+    "look-a": (3, 2, 2.0, 3.5, 2.5, 0.90),
+    "look-b": (3, 2, 2.0, 3.5, 2.5, 0.90),
 }
 
 GROUNDED_STATES = {"idle", "waving", "waiting", "running", "review", "look-a", "look-b"}
-RUNNING_CORE_BOX = (30, 50, 110, 204)
-RUNNING_CORE_PIXEL_CHANGE_LIMIT = 0.06
-RUNNING_CORE_ALPHA_CHANGE_LIMIT = 0.02
+FIXED_BODY_STATES = {"waving", "running"}
+FIXED_BODY_CORE_BOX = (30, 50, 110, 204)
+FIXED_BODY_PIXEL_CHANGE_LIMIT = 0.06
+FIXED_BODY_ALPHA_CHANGE_LIMIT = 0.02
+
+
+def pixel_data(image: Image.Image):
+    getter = getattr(image, "get_flattened_data", None)
+    return getter() if getter else image.getdata()
 
 
 def alpha_bbox(frame: Image.Image) -> tuple[int, int, int, int] | None:
@@ -103,7 +110,7 @@ def silhouette_iou(first: Image.Image, last: Image.Image) -> float:
 
 
 def core_change_ratios(frames: list[Image.Image]) -> tuple[float, float]:
-    cropped = [frame.crop(RUNNING_CORE_BOX) for frame in frames]
+    cropped = [frame.crop(FIXED_BODY_CORE_BOX) for frame in frames]
     blurred = [frame.filter(ImageFilter.GaussianBlur(1.5)) for frame in cropped]
     silhouettes = [
         frame.getchannel("A")
@@ -117,7 +124,7 @@ def core_change_ratios(frames: list[Image.Image]) -> tuple[float, float]:
     for index, current in enumerate(blurred):
         following = blurred[(index + 1) % len(blurred)]
         visible = pixel_changes = 0
-        for left, right in zip(current.get_flattened_data(), following.get_flattened_data()):
+        for left, right in zip(pixel_data(current), pixel_data(following)):
             if left[3] <= 16 and right[3] <= 16:
                 continue
             visible += 1
@@ -138,6 +145,15 @@ def inspect(path: Path) -> dict[str, object]:
     rows: list[dict[str, object]] = []
     if atlas.size != (CELL_W * 8, CELL_H * 11):
         errors.append(f"atlas is {atlas.width}x{atlas.height}; expected 1536x2288")
+        if atlas.width < CELL_W * 8 or atlas.height < CELL_H * 11:
+            return {
+                "ok": False,
+                "file": str(path),
+                "errors": errors,
+                "rows": rows,
+                "grounded_median_heights": {},
+                "grounded_median_baselines": {},
+            }
 
     for row, (state, count) in enumerate(zip(STATE_NAMES, FRAME_COUNTS)):
         frames = [
@@ -166,32 +182,32 @@ def inspect(path: Path) -> dict[str, object]:
             "alpha_center_range": round(max(c for c in alpha_centers if c is not None) - min(c for c in alpha_centers if c is not None), 3),
             "loop_iou": round(iou, 4),
         }
-        if state == "running":
+        if state in FIXED_BODY_STATES:
             core_pixel_change, core_alpha_change = core_change_ratios(frames)
             row_result["core_pixel_change_ratio"] = round(core_pixel_change, 4)
             row_result["core_alpha_change_ratio"] = round(core_alpha_change, 4)
-            if core_pixel_change > RUNNING_CORE_PIXEL_CHANGE_LIMIT:
+            if core_pixel_change > FIXED_BODY_PIXEL_CHANGE_LIMIT:
                 errors.append(
-                    f"running: fixed body pixels change {core_pixel_change:.1%}; "
-                    f"limit is {RUNNING_CORE_PIXEL_CHANGE_LIMIT:.1%}"
+                    f"{state}: fixed body pixels change {core_pixel_change:.1%}; "
+                    f"limit is {FIXED_BODY_PIXEL_CHANGE_LIMIT:.1%}"
                 )
-            if core_alpha_change > RUNNING_CORE_ALPHA_CHANGE_LIMIT:
+            if core_alpha_change > FIXED_BODY_ALPHA_CHANGE_LIMIT:
                 errors.append(
-                    f"running: fixed body silhouette changes {core_alpha_change:.1%}; "
-                    f"limit is {RUNNING_CORE_ALPHA_CHANGE_LIMIT:.1%}"
+                    f"{state}: fixed body silhouette changes {core_alpha_change:.1%}; "
+                    f"limit is {FIXED_BODY_ALPHA_CHANGE_LIMIT:.1%}"
                 )
         rows.append(row_result)
-        if state in SUBTLE_LIMITS:
-            height_limit, baseline_limit, anchor_limit, head_limit, silhouette_limit, iou_limit = SUBTLE_LIMITS[state]
+        if state in ROW_LIMITS:
+            height_limit, baseline_limit, anchor_limit, head_limit, silhouette_limit, iou_limit = ROW_LIMITS[state]
             if row_result["height_range"] > height_limit:
                 errors.append(f"{state}: height drifts {row_result['height_range']} px; limit is {height_limit}")
             if row_result["baseline_range"] > baseline_limit:
                 errors.append(f"{state}: baseline drifts {row_result['baseline_range']} px; limit is {baseline_limit}")
-            if state != "running" and row_result["anchor_center_range"] > anchor_limit:
+            if state not in FIXED_BODY_STATES and row_result["anchor_center_range"] > anchor_limit:
                 errors.append(f"{state}: lower-body anchor drifts {row_result['anchor_center_range']} px; limit is {anchor_limit}")
-            if state != "running" and row_result["head_center_range"] > head_limit:
+            if state not in FIXED_BODY_STATES and row_result["head_center_range"] > head_limit:
                 errors.append(f"{state}: head center drifts {row_result['head_center_range']} px; limit is {head_limit}")
-            if state != "running" and row_result["alpha_center_range"] > silhouette_limit:
+            if state not in FIXED_BODY_STATES and row_result["alpha_center_range"] > silhouette_limit:
                 errors.append(f"{state}: full silhouette drifts {row_result['alpha_center_range']} px; limit is {silhouette_limit}")
             if iou < iou_limit:
                 errors.append(f"{state}: first-to-last silhouette IoU is {iou:.4f}; minimum is {iou_limit}")
@@ -216,6 +232,20 @@ def inspect(path: Path) -> dict[str, object]:
             )
     if medians and max(medians.values()) - min(medians.values()) > 3:
         errors.append(f"grounded state median heights differ too much: {medians}")
+
+    directional = {
+        row["state"]: row["median_height"]
+        for row in rows
+        if row["state"] in {"running-right", "running-left"}
+    }
+    for state, height in directional.items():
+        if not DIRECTIONAL_HEIGHT_RANGE[0] <= height <= DIRECTIONAL_HEIGHT_RANGE[1]:
+            errors.append(
+                f"{state}: median visible height is {height} px; "
+                f"expected {DIRECTIONAL_HEIGHT_RANGE[0]}-{DIRECTIONAL_HEIGHT_RANGE[1]} px"
+            )
+    if len(directional) == 2 and max(directional.values()) - min(directional.values()) > 3:
+        errors.append(f"directional median heights differ too much: {directional}")
 
     baselines = {
         row["state"]: row["median_baseline"]

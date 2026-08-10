@@ -9,11 +9,20 @@ from pathlib import Path
 
 from PIL import Image
 
-from extract_row import BASELINE, CELL_SIZE, TARGET_HEIGHT, parse_color, remove_key
+from extract_row import BASELINE, CELL_SIZE, parse_color, remove_key
 
 
-SEQUENCE = (0, 1, 2, 3, 2, 1)
-HIP_ANCHOR = (115, 132)
+DEFAULT_SEQUENCE = (0, 1, 2, 3, 2, 1)
+
+
+def parse_sequence(value: str) -> tuple[int, ...]:
+    try:
+        sequence = tuple(int(item) for item in value.split(","))
+    except ValueError as error:
+        raise argparse.ArgumentTypeError("sequence must be comma-separated tail indexes") from error
+    if not sequence or any(index not in range(4) for index in sequence):
+        raise argparse.ArgumentTypeError("sequence must contain tail indexes from 0 through 3")
+    return sequence
 
 
 def components(image: Image.Image) -> list[tuple[int, tuple[int, int, int, int]]]:
@@ -67,7 +76,15 @@ def root_y(tail: Image.Image) -> float:
     return sum(points) / len(points)
 
 
-def build(source: Path, output_dir: Path, key: tuple[int, int, int], threshold: int) -> None:
+def build(
+    source: Path,
+    output_dir: Path,
+    key: tuple[int, int, int],
+    threshold: int,
+    target_height: int,
+    hip_anchor: tuple[int, int],
+    sequence: tuple[int, ...],
+) -> None:
     keyed = remove_key(Image.open(source), key, threshold)
     found = sorted(components(keyed), reverse=True)
     if len(found) != 5:
@@ -77,8 +94,8 @@ def build(source: Path, output_dir: Path, key: tuple[int, int, int], threshold: 
     tail_boxes = sorted((box for _, box in found[1:]), key=lambda box: box[0])
     body = keyed.crop(body_box)
     tails = [keyed.crop(box) for box in tail_boxes]
-    scale = TARGET_HEIGHT / body.height
-    body = body.resize((round(body.width * scale), TARGET_HEIGHT), Image.Resampling.LANCZOS)
+    scale = target_height / body.height
+    body = body.resize((round(body.width * scale), target_height), Image.Resampling.LANCZOS)
     tails = [
         tail.resize((round(tail.width * scale), round(tail.height * scale)), Image.Resampling.LANCZOS)
         for tail in tails
@@ -87,10 +104,10 @@ def build(source: Path, output_dir: Path, key: tuple[int, int, int], threshold: 
 
     output_dir.mkdir(parents=True, exist_ok=True)
     body_position = (round(CELL_SIZE[0] / 2 - body.width / 2), BASELINE - body.height)
-    for frame_index, tail_index in enumerate(SEQUENCE):
+    for frame_index, tail_index in enumerate(sequence):
         frame = Image.new("RGBA", CELL_SIZE, (0, 0, 0, 0))
         tail = tails[tail_index]
-        tail_position = (HIP_ANCHOR[0], round(HIP_ANCHOR[1] - source_root_ys[tail_index]))
+        tail_position = (hip_anchor[0], round(hip_anchor[1] - source_root_ys[tail_index]))
         frame.alpha_composite(tail, tail_position)
         frame.alpha_composite(body, body_position)
         box = frame.getbbox()
@@ -99,8 +116,8 @@ def build(source: Path, output_dir: Path, key: tuple[int, int, int], threshold: 
         frame.save(output_dir / f"{frame_index:02d}.png")
 
     print(
-        f"running: frames=6 body={body.width}x{body.height} baseline={BASELINE} "
-        f"hip={HIP_ANCHOR} sequence=A-B-C-D-C-B"
+        f"tail-rig: frames={len(sequence)} body={body.width}x{body.height} baseline={BASELINE} "
+        f"hip={hip_anchor} sequence={','.join(str(index) for index in sequence)}"
     )
 
 
@@ -108,14 +125,21 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("component_kit", type=Path)
     parser.add_argument("output_dir", type=Path)
-    parser.add_argument("--chroma-key", default="#0000FF")
+    parser.add_argument("--chroma-key", default="#00FF00")
     parser.add_argument("--key-threshold", type=int, default=160)
+    parser.add_argument("--target-height", type=int, default=176)
+    parser.add_argument("--hip-x", type=int, default=100)
+    parser.add_argument("--hip-y", type=int, default=124)
+    parser.add_argument("--sequence", type=parse_sequence, default=DEFAULT_SEQUENCE)
     args = parser.parse_args()
     build(
         args.component_kit.resolve(),
         args.output_dir.resolve(),
         parse_color(args.chroma_key),
         args.key_threshold,
+        args.target_height,
+        (args.hip_x, args.hip_y),
+        args.sequence,
     )
 
 

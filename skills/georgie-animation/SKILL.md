@@ -39,12 +39,21 @@ just rig-running <output-directory>
 
 The command uses `assets/georgie-tail-rig.png`, which contains the approved image-generated body and four tail keys.
 
+Rebuild the stable first pointer row from the approved second row with:
+
+```powershell
+just rig-pointer <row-10-frames-directory> <output-directory>
+```
+
+The command keeps one registered body family and mirrors only the two eye masks. It repeats the nearest up-gaze pose for the two top buckets instead of introducing a different body silhouette.
+
 ## Hard rules
 
 - Do not shift, crop, rotate, scale, splice, inpaint, or copy individual packaged cells to hide a bad transition.
 - Do not scale frames separately. Deterministic full-pose registration to the shared body anchor is allowed during source extraction.
 - Reject the full strip when a pose crosses its equal slot and no empty gap of at least six pixels separates the complete poses.
 - Do not replace body regions inside final cells to hide a failed generated row. A declared appendage rig is allowed only when every visual component comes from one coherent image-generated kit, the appendage is composited behind one unchanged whole body, and the completed loop passes deterministic and visual QA.
+- A pointer gaze rig may mirror only the two declared eye masks from one approved whole-body look family. Every pixel outside those masks must stay on the same registered body.
 - Do not reuse another state's row as a substitute.
 - An exact neutral whole-pose frame may anchor state boundaries when the matrix requires a pixel-stable entry or exit.
 - Do not publish a row that has not been watched as a complete loop at app size.
@@ -58,8 +67,8 @@ The command uses `assets/georgie-tail-rig.png`, which contains the approved imag
 - Keep grounded rows on the same baseline.
 - Keep subtle rows within the drift and scale budgets in the matrix.
 - Keep the `running` and `review` rows restrained because Codex repeats them often.
-- Keep the `waiting` paw raised as a held pose. Do not animate repeated lifting.
-- Use the paw lift only for `waiting`.
+- Keep `waiting` attentive through the eyes and ears. Do not use a paw lift in a looping row.
+- Do not use paw motion in `waiting`, `running`, or `review`.
 - Keep pointer-look motion separate from state animation and preserve the same full-body scale.
 - Keep pointer looks on the same `y=203` baseline as the grounded rows. Do not pass a cell through a helper that vertically centers it before look registration.
 - If two eye-only look generations still move the head or body, stop regenerating the eight-pose sweep. Generate the intermediates as ordered four-pose gaze families, then assemble the approved whole poses in clockwise order.

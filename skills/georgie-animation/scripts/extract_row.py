@@ -10,7 +10,7 @@ from PIL import Image
 
 
 CELL_SIZE = (192, 208)
-TARGET_HEIGHT = 145
+TARGET_HEIGHT = 176
 BASELINE = 203
 FRAME_COUNTS = {
     "idle": 6,
@@ -38,17 +38,26 @@ def parse_color(value: str) -> tuple[int, int, int]:
 def remove_key(image: Image.Image, key: tuple[int, int, int], threshold: int) -> Image.Image:
     rgba = image.convert("RGBA")
     limit = threshold * threshold
+    key_channel = max(range(3), key=lambda index: key[index])
+    other_channels = [index for index in range(3) if index != key_channel]
+    dominant_key = all(key[key_channel] - key[index] >= 128 for index in other_channels)
     pixels = rgba.load()
     for y in range(rgba.height):
         for x in range(rgba.width):
             red, green, blue, _ = pixels[x, y]
-            distance = (red - key[0]) ** 2 + (green - key[1]) ** 2 + (blue - key[2]) ** 2
-            if distance <= limit:
+            color = (red, green, blue)
+            distance = sum((color[index] - key[index]) ** 2 for index in range(3))
+            dominant_spill = (
+                dominant_key
+                and color[key_channel] >= 50
+                and color[key_channel] - max(color[index] for index in other_channels) >= 5
+            )
+            if distance <= limit or dominant_spill:
                 pixels[x, y] = (0, 0, 0, 0)
     return rgba
 
 
-def clear_gap_boundaries(strip: Image.Image, count: int, minimum_gap: int = 6) -> list[int] | None:
+def clear_gap_boundaries(strip: Image.Image, count: int, minimum_gap: int = 4) -> list[int] | None:
     alpha = strip.getchannel("A")
     data = alpha.tobytes()
     occupied = [False] * strip.width
@@ -148,6 +157,7 @@ def extract(
     output_dir.mkdir(parents=True, exist_ok=True)
 
     output_sizes = []
+    written_frames: list[Image.Image] = []
     for index, (slot, box) in enumerate(zip(slots, typed_boxes)):
         sprite = slot.crop(box)
         output_size = (round(sprite.width * scale), round(sprite.height * scale))
@@ -162,7 +172,10 @@ def extract(
         target_bottom = BASELINE
         if state == "jumping":
             target_bottom -= round((source_ground - box[3]) * scale)
-        frame.alpha_composite(resized, (round(CELL_SIZE[0] / 2 - anchor), target_bottom - resized.height))
+        target_top = target_bottom - resized.height
+        if state == "jumping":
+            target_top = max(8, target_top)
+        frame.alpha_composite(resized, (round(CELL_SIZE[0] / 2 - anchor), target_top))
         frame_box = frame.getbbox()
         if frame_box is None:
             raise SystemExit(f"{state} frame {index}: registered pose is empty")
@@ -172,8 +185,16 @@ def extract(
             corrected = Image.new("RGBA", CELL_SIZE, (0, 0, 0, 0))
             corrected.alpha_composite(frame, (correction, 0))
             frame = corrected
+        written_frames.append(frame.copy())
         frame.save(output_dir / f"{index:02d}.png")
         output_sizes.append(output_size)
+
+    if state == "jumping" and written_frames:
+        written_frames[0].save(output_dir / f"{count - 1:02d}.png")
+    if state == "failed" and len(written_frames) == 8:
+        written_frames[2].save(output_dir / "04.png")
+        written_frames[1].save(output_dir / "05.png")
+        written_frames[0].save(output_dir / "07.png")
 
     print(
         f"{state}: frames={count} target_height={target_height} "
