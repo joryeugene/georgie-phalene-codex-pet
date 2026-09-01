@@ -25,6 +25,30 @@ This pet is for people who work better with a little comfort, support, and momen
 
 3. Restart Codex and select Georgie from your pet picker.
 
+### Omarchy / Hyprland
+
+If Georgie appears inside a blurred or bordered rectangle that covers the task feed, add this rule to `~/.config/hypr/hyprland.lua`:
+
+```lua
+o.window({ class = "^chatgpt$", title = "^Codex$" }, {
+  tag = "-default-opacity",
+  opacity = "1 1",
+  no_blur = true,
+  no_shadow = true,
+  no_dim = true,
+  border_size = 0,
+})
+```
+
+Then run:
+
+```sh
+hyprctl reload
+hyprctl configerrors
+```
+
+The title match limits the rule to the pet overlay and leaves the main ChatGPT window unchanged.
+
 ## Animation work
 
 Read [AGENTS.md](AGENTS.md) and [the Georgie animation skill](skills/georgie-animation/SKILL.md) before you change the sprite sheet. Treat v1.0.0 as the known-good release. Test animation changes as separate candidates and review each real Codex action before installation or publication. Do not repair individual atlas cells.
